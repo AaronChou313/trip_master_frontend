@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "webpack serve --mode development",
     "build": "webpack --mode production",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify-env": "node ../scripts/verify-env.js"
   },
   "keywords": [
     "travel",
@@ -19,7 +20,8 @@
   "dependencies": {
     "vue": "^3.3.4",
     "vue-router": "^4.2.4",
-    "github-markdown-css": "^5.9.0"
+    "github-markdown-css": "^5.9.0",
+    "axios": "^1.6.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

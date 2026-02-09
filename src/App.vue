@@ -7,6 +7,7 @@
         <router-link to="/itinerary" class="nav-link">行程规划</router-link>
         <router-link to="/budget" class="nav-link">预算管理</router-link>
         <router-link to="/memos" class="nav-link">备忘事项</router-link>
+        <router-link to="/env-test" class="nav-link env-test-link">环境测试</router-link>
       </nav>
       <!-- <div class="data-actions">
         <button @click="exportData" class="btn btn-secondary">导出数据</button>
@@ -199,6 +200,16 @@ body {
 .nav-link.router-link-active {
   background: rgba(255,255,255,0.2);
   transform: translateY(-2px);
+}
+
+.env-test-link {
+  background: #ff6b6b;
+  border: 2px solid #ff6b6b;
+}
+
+.env-test-link:hover {
+  background: #ff5252;
+  border-color: #ff5252;
 }
 
 .data-actions {

@@ -10,7 +10,8 @@ module.exports = (env, argv) => {
     entry: './src/main.js',
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: 'bundle.js',
+      filename: isProduction ? '[name].[contenthash].js' : '[name].js',
+      chunkFilename: isProduction ? '[name].[contenthash].chunk.js' : '[name].chunk.js',
       clean: true,
       publicPath: '/'
     },
@@ -51,10 +52,6 @@ module.exports = (env, argv) => {
       })
     ],
     devServer: {
-      static: {
-        directory: path.join(__dirname, 'dist')
-      },
-      compress: true,
       port: 8080,
       hot: true,
       historyApiFallback: true,
@@ -73,7 +70,14 @@ module.exports = (env, argv) => {
     },
     optimization: {
       splitChunks: {
-        chunks: 'all'
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          }
+        }
       }
     }
   };
