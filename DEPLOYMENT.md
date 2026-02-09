@@ -1,5 +1,17 @@
 # Vercel 部署指南
 
+## 紧急故障排除
+
+### 如果部署后页面仍然空白：
+
+1. **立即访问诊断页面**：
+   直接在浏览器中访问：`https://your-deployed-url.vercel.app/#/deploy-check`
+
+2. **检查控制台错误**：
+   - 按 F12 打开开发者工具
+   - 查看 Console 面板的错误信息
+   - 检查 Network 面板的请求状态
+
 ## 多环境配置说明
 
 本项目支持三种环境配置：
@@ -108,7 +120,8 @@ vercel --prod
 - Vercel 部署后需要重新部署才能生效
 
 ### 2. 页面空白问题
-使用 EnvChecker 组件检查：
+使用诊断页面检查：
+- 访问 `#/deploy-check` 查看详细状态
 - 环境变量是否正确加载
 - API 连接是否正常
 - 控制台是否有错误信息
@@ -125,6 +138,14 @@ vercel --prod
 
 ## 调试工具
 
+### DeployCheck 诊断页面
+访问 `#/deploy-check` 可以获得：
+- 应用基本信息
+- 环境变量状态检查
+- API 连接测试
+- 通知系统测试
+- 快速导航到各功能模块
+
 ### EnvChecker 组件功能
 - 显示当前环境变量状态
 - 测试 API 连接
@@ -137,6 +158,9 @@ vercel --prod
 console.log('API Base URL:', process.env.VUE_APP_API_BASE_URL);
 console.log('AMAP Key:', process.env.VUE_APP_AMAP_KEY);
 console.log('Node Env:', process.env.NODE_ENV);
+
+// 查看全局配置
+console.log('App Config:', window.APP_CONFIG);
 ```
 
 ## 最佳实践

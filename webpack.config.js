@@ -50,10 +50,10 @@ module.exports = (env, argv) => {
       }),
       new Dotenv({
         path: path.resolve(__dirname, envFile),
-        safe: true, // 启用安全模式，确保所有变量都被定义
-        systemvars: true, // 允许使用系统环境变量（Vercel部署时必需）
-        silent: false, // 显示加载信息
-        defaults: false // 不使用默认值
+        safe: true,
+        systemvars: true, // 关键：允许使用系统环境变量
+        silent: false,
+        defaults: true // 使用默认值
       })
     ],
     resolve: {
