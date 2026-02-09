@@ -1,0 +1,38 @@
+{
+  "name": "trip-master-frontend",
+  "version": "1.0.0",
+  "description": "旅行规划大师前端 - 基于Vue 3的单页应用",
+  "scripts": {
+    "dev": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "travel",
+    "planning",
+    "amap",
+    "vue",
+    "spa"
+  ],
+  "author": "TripMaster Developer",
+  "license": "MIT",
+  "dependencies": {
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4",
+    "github-markdown-css": "^5.9.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "@vue/compiler-sfc": "^3.3.4",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^6.8.1",
+    "dotenv-webpack": "^8.1.1",
+    "html-webpack-plugin": "^5.5.3",
+    "style-loader": "^3.3.3",
+    "vue-loader": "^17.2.2",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  }
+}
