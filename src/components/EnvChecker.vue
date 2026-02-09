@@ -1,26 +1,34 @@
 <template>
   <div class="env-checker">
-    <h3>🔧 环境变量检查</h3>
-    <div class="env-status">
-      <div class="env-item" :class="{ 'success': hasApiUrl, 'error': !hasApiUrl }">
-        <span class="label">API Base URL:</span>
-        <span class="value">{{ apiUrlDisplay }}</span>
-      </div>
-      <div class="env-item" :class="{ 'success': hasAmapKey, 'error': !hasAmapKey }">
-        <span class="label">高德地图 Key:</span>
-        <span class="value">{{ amapKeyDisplay }}</span>
-      </div>
-      <div class="env-item">
-        <span class="label">Node Environment:</span>
-        <span class="value">{{ nodeEnv }}</span>
-      </div>
+    <h3>环境变量检查器</h3>
+    <div class="env-info">
+      <p><strong>当前环境:</strong> {{ currentEnv }}</p>
+      <p><strong>构建模式:</strong> {{ buildMode }}</p>
     </div>
     
+    <div class="env-vars">
+      <h4>环境变量状态:</h4>
+      <div class="var-item" :class="{ 'missing': !apiBaseUrl }">
+        <span class="var-name">VUE_APP_API_BASE_URL:</span>
+        <span class="var-value">{{ apiBaseUrl || '❌ 未设置' }}</span>
+      </div>
+      <div class="var-item" :class="{ 'missing': !amapKey }">
+        <span class="var-name">VUE_APP_AMAP_KEY:</span>
+        <span class="var-value">{{ amapKey ? amapKey.substring(0, 8) + '...' : '❌ 未设置' }}</span>
+      </div>
+      <div class="var-item">
+        <span class="var-name">NODE_ENV:</span>
+        <span class="var-value">{{ nodeEnv }}</span>
+      </div>
+    </div>
+
     <div class="actions">
-      <button @click="refreshEnv" class="btn-refresh">刷新检查</button>
-      <button @click="testApi" :disabled="!hasApiUrl" class="btn-test">测试 API</button>
+      <button @click="testApiConnection" :disabled="!apiBaseUrl">
+        测试 API 连接
+      </button>
+      <button @click="refresh">刷新检查</button>
     </div>
-    
+
     <div v-if="apiTestResult" class="api-test-result">
       <h4>API 测试结果:</h4>
       <pre>{{ apiTestResult }}</pre>
@@ -33,62 +41,59 @@ export default {
   name: 'EnvChecker',
   data() {
     return {
-      apiUrl: '',
-      amapKey: '',
-      nodeEnv: '',
-      apiTestResult: ''
+      currentEnv: process.env.NODE_ENV || 'unknown',
+      buildMode: process.env.BUILD_MODE || 'unknown',
+      apiBaseUrl: process.env.VUE_APP_API_BASE_URL,
+      amapKey: process.env.VUE_APP_AMAP_KEY,
+      nodeEnv: process.env.NODE_ENV,
+      apiTestResult: null
     };
   },
-  computed: {
-    hasApiUrl() {
-      return !!this.apiUrl;
-    },
-    hasAmapKey() {
-      return !!this.amapKey;
-    },
-    apiUrlDisplay() {
-      return this.apiUrl || '❌ 未设置';
-    },
-    amapKeyDisplay() {
-      if (!this.amapKey) return '❌ 未设置';
-      return `${this.amapKey.substring(0, 8)}...`;
-    }
-  },
   mounted() {
-    this.checkEnvironment();
+    this.logEnvironmentInfo();
   },
   methods: {
-    checkEnvironment() {
-      // 检查环境变量
-      this.apiUrl = process.env.VUE_APP_API_BASE_URL || '';
-      this.amapKey = process.env.VUE_APP_AMAP_KEY || '';
-      this.nodeEnv = process.env.NODE_ENV || 'unknown';
-      
-      console.log('🔍 环境变量检查:');
-      console.log('API URL:', this.apiUrl);
-      console.log('AMAP Key:', this.amapKey ? `${this.amapKey.substring(0, 8)}...` : '未设置');
-      console.log('Node Env:', this.nodeEnv);
+    logEnvironmentInfo() {
+      console.group('🔧 环境变量检查');
+      console.log('VUE_APP_API_BASE_URL:', this.apiBaseUrl);
+      console.log('VUE_APP_AMAP_KEY:', this.amapKey ? `${this.amapKey.substring(0, 8)}...` : '未设置');
+      console.log('NODE_ENV:', this.nodeEnv);
+      console.log('BUILD_MODE:', this.buildMode);
+      console.groupEnd();
     },
-    
-    refreshEnv() {
-      this.checkEnvironment();
-      this.apiTestResult = '';
-    },
-    
-    async testApi() {
-      if (!this.apiUrl) {
-        this.apiTestResult = '❌ API Base URL 未配置';
+    async testApiConnection() {
+      if (!this.apiBaseUrl) {
+        this.apiTestResult = '错误: API 基础 URL 未设置';
         return;
       }
-      
+
       try {
-        this.apiTestResult = '⏳ 正在测试...';
-        const response = await fetch(`${this.apiUrl}/health`);
-        const data = await response.json();
-        this.apiTestResult = `✅ 连接成功\n状态: ${response.status}\n数据: ${JSON.stringify(data, null, 2)}`;
+        const response = await fetch(`${this.apiBaseUrl}/health`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          this.apiTestResult = `✅ 连接成功\n状态码: ${response.status}\n响应: ${JSON.stringify(data, null, 2)}`;
+        } else {
+          this.apiTestResult = `❌ 连接失败\n状态码: ${response.status}\n状态文本: ${response.statusText}`;
+        }
       } catch (error) {
-        this.apiTestResult = `❌ 连接失败: ${error.message}`;
+        this.apiTestResult = `❌ 网络错误: ${error.message}`;
       }
+    },
+    refresh() {
+      // 重新获取环境变量（虽然在运行时不会改变）
+      this.currentEnv = process.env.NODE_ENV || 'unknown';
+      this.buildMode = process.env.BUILD_MODE || 'unknown';
+      this.apiBaseUrl = process.env.VUE_APP_API_BASE_URL;
+      this.amapKey = process.env.VUE_APP_AMAP_KEY;
+      this.nodeEnv = process.env.NODE_ENV;
+      this.apiTestResult = null;
+      this.logEnvironmentInfo();
     }
   }
 };
@@ -96,94 +101,78 @@ export default {
 
 <style scoped>
 .env-checker {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
   padding: 20px;
-  margin: 20px 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  font-family: monospace;
 }
 
-.env-checker h3 {
-  margin-top: 0;
-  color: #495057;
+.env-info {
+  margin-bottom: 20px;
 }
 
-.env-status {
-  margin: 15px 0;
+.env-vars {
+  margin-bottom: 20px;
 }
 
-.env-item {
+.var-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.env-item:last-child {
-  border-bottom: none;
-}
-
-.env-item.success {
-  color: #28a745;
-}
-
-.env-item.error {
-  color: #dc3545;
-  background-color: #f8d7da;
   padding: 8px;
-  border-radius: 4px;
   margin: 4px 0;
+  background-color: white;
+  border-radius: 4px;
 }
 
-.label {
+.var-item.missing {
+  background-color: #ffebee;
+  border-left: 4px solid #f44336;
+}
+
+.var-name {
   font-weight: bold;
-  min-width: 120px;
+  color: #666;
 }
 
-.value {
-  font-family: monospace;
-  word-break: break-all;
+.var-value {
+  color: #333;
 }
 
 .actions {
-  margin: 15px 0;
+  margin-bottom: 20px;
 }
 
-.btn-refresh, .btn-test {
-  background: #007bff;
-  color: white;
-  border: none;
+button {
   padding: 8px 16px;
   margin-right: 10px;
+  border: none;
   border-radius: 4px;
+  background-color: #2196F3;
+  color: white;
   cursor: pointer;
 }
 
-.btn-refresh:hover, .btn-test:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.btn-test:disabled {
-  background: #6c757d;
+button:disabled {
+  background-color: #ccc;
   cursor: not-allowed;
 }
 
+button:hover:not(:disabled) {
+  background-color: #1976D2;
+}
+
 .api-test-result {
-  margin-top: 15px;
-  padding: 12px;
-  background: #e9ecef;
+  padding: 15px;
+  background-color: white;
   border-radius: 4px;
+  border: 1px solid #ddd;
 }
 
-.api-test-result h4 {
-  margin: 0 0 10px 0;
-  color: #495057;
-}
-
-.api-test-result pre {
-  margin: 0;
-  font-size: 12px;
+pre {
   white-space: pre-wrap;
   word-wrap: break-word;
+  margin: 0;
+  color: #333;
 }
 </style>

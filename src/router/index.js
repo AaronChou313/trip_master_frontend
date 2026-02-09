@@ -4,12 +4,11 @@ import ItineraryView from '../views/ItineraryView.vue';
 import BudgetView from '../views/BudgetView.vue';
 import MemosView from '../views/MemosView.vue';
 import DeployCheck from '../views/DeployCheck.vue';
-import SimpleCheck from '../views/SimpleCheck.vue';
 
 const routes = [
   {
     path: '/',
-    redirect: '/simple-check'
+    redirect: '/pois'
   },
   {
     path: '/pois',
@@ -35,11 +34,6 @@ const routes = [
     path: '/deploy-check',
     name: 'DeployCheck',
     component: DeployCheck
-  },
-  {
-    path: '/simple-check',
-    name: 'SimpleCheck',
-    component: SimpleCheck
   }
 ];
 
