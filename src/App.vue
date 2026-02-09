@@ -1,33 +1,49 @@
 <template>
   <div id="app">
-    <header class="app-header">
-      <h1>TripMaster 旅行规划助手</h1>
-      <nav class="nav-menu">
-        <router-link to="/pois" class="nav-link">地点管理</router-link>
-        <router-link to="/itinerary" class="nav-link">行程规划</router-link>
-        <router-link to="/budget" class="nav-link">预算管理</router-link>
-        <router-link to="/memos" class="nav-link">备忘事项</router-link>
-        <router-link to="/env-test" class="nav-link env-test-link">环境测试</router-link>
-      </nav>
-      <!-- <div class="data-actions">
-        <button @click="exportData" class="btn btn-secondary">导出数据</button>
-        <label class="btn btn-secondary">
-          导入数据
-          <input type="file" @change="importData" accept=".json" style="display: none;">
-        </label>
-      </div> -->
-    </header>
-    
-    <main class="app-main">
+    <!-- 环境信息显示 -->
+    <div v-if="showEnvInfo" class="env-info">
+      <div class="env-banner">
+        <span class="env-tag">{{ environment }}</span>
+        <button @click="toggleEnvInfo" class="close-btn">×</button>
+      </div>
+      <div class="env-details">
+        <p><strong>API地址:</strong> {{ apiUrl }}</p>
+        <p><strong>高德Key:</strong> {{ amapKey ? '已配置' : '未配置' }}</p>
+        <p><strong>构建时间:</strong> {{ buildTime }}</p>
+      </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+      <div class="nav-brand">
+        <h1>TripMaster</h1>
+        <span class="version">v1.0</span>
+      </div>
+      <ul class="nav-links">
+        <li><router-link to="/pois">兴趣点</router-link></li>
+        <li><router-link to="/itinerary">行程</router-link></li>
+        <li><router-link to="/budget">预算</router-link></li>
+        <li><router-link to="/memos">备忘录</router-link></li>
+      </ul>
+      <div class="nav-actions">
+        <button @click="toggleEnvInfo" class="env-toggle-btn">
+          {{ showEnvInfo ? '隐藏' : '环境' }}
+        </button>
+      </div>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
       <router-view />
     </main>
-    
+
+    <!-- 全局通知组件 -->
     <Notification />
   </div>
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import Notification from './components/Notification.vue';
 
 export default {
@@ -36,121 +52,53 @@ export default {
     Notification
   },
   setup() {
-    const exportData = async () => {
-      try {
-        const [poisRes, itinerariesRes, budgetsRes] = await Promise.all([
-          fetch('/api/pois'),
-          fetch('/api/itineraries'),
-          fetch('/api/budgets')
-        ]);
+    const showEnvInfo = ref(false);
+    const environment = ref(import.meta.env.VITE_APP_ENV || 'unknown');
+    const apiUrl = ref(import.meta.env.VITE_API_BASE_URL || 'not configured');
+    const amapKey = ref(import.meta.env.VITE_AMAP_KEY || '');
+    const buildTime = ref(new Date().toLocaleString());
 
-        if (poisRes.ok && itinerariesRes.ok && budgetsRes.ok) {
-          const [pois, itineraries, budgets] = await Promise.all([
-            poisRes.json(),
-            itinerariesRes.json(),
-            budgetsRes.json()
-          ]);
-
-          const exportData = {
-            pois,
-            itineraries,
-            budgets,
-            exportTime: new Date().toISOString(),
-            version: '1.0'
-          };
-
-          const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `tripmaster-export-${new Date().toISOString().split('T')[0]}.json`;
-          a.click();
-          URL.revokeObjectURL(url);
-          
-          window.notificationService?.showSuccess('数据导出成功！');
-        } else {
-          window.notificationService?.showError('导出失败，请重试');
-        }
-      } catch (error) {
-        console.error('Export failed:', error);
-        window.notificationService?.showError('导出失败，请重试');
-      }
+    const toggleEnvInfo = () => {
+      showEnvInfo.value = !showEnvInfo.value;
     };
 
-    const importData = async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const importData = JSON.parse(text);
-
-        // 验证数据结构
-        if (!importData.pois || !importData.itineraries || !importData.budgets) {
-          window.notificationService?.showError('数据格式不正确');
-          return;
-        }
-
-        // 逐个导入数据
-        const importPromises = [];
-
-        // 导入POIs
-        importData.pois.forEach(poi => {
-          importPromises.push(
-            fetch('/api/pois', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(poi)
-            })
-          );
-        });
-
-        // 导入Itineraries
-        importData.itineraries.forEach(itin => {
-          importPromises.push(
-            fetch('/api/itineraries', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(itin)
-            })
-          );
-        });
-
-        // 导入Budgets
-        importData.budgets.forEach(budget => {
-          importPromises.push(
-            fetch('/api/budgets', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(budget)
-            })
-          );
-        });
-
-        await Promise.all(importPromises);
-        
-        window.notificationService?.showSuccess('数据导入成功！页面将刷新以应用更改。');
-        setTimeout(() => {
-          location.reload();
-        }, 1500);
-      } catch (error) {
-        console.error('Import failed:', error);
-        window.notificationService?.showError('导入失败，请检查文件格式');
-      }
-
-      // 重置文件输入
-      event.target.value = '';
-    };
+    // 页面加载时的初始化
+    onMounted(() => {
+      console.log('=== TripMaster 应用启动 ===');
+      console.log('环境:', environment.value);
+      console.log('API地址:', apiUrl.value);
+      console.log('构建时间:', buildTime.value);
+      
+      // 检查API连接
+      setTimeout(() => {
+        fetch(`${apiUrl.value}/api/pois`)
+          .then(response => {
+            if (response.ok) {
+              console.log('✅ API连接正常');
+            } else {
+              console.warn('⚠️ API连接异常:', response.status);
+            }
+          })
+          .catch(error => {
+            console.error('❌ API连接失败:', error.message);
+          });
+      }, 1000);
+    });
 
     return {
-      exportData,
-      importData
+      showEnvInfo,
+      environment,
+      apiUrl,
+      amapKey,
+      buildTime,
+      toggleEnvInfo
     };
   }
 };
 </script>
 
 <style>
+/* 基础样式重置 */
 * {
   margin: 0;
   padding: 0;
@@ -160,115 +108,181 @@ export default {
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
 }
 
 #app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.app-header {
+/* 环境信息样式 */
+.env-info {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 1rem 2rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.app-header h1 {
-  font-size: 1.8rem;
-  font-weight: 600;
+  padding: 1rem;
   margin-bottom: 1rem;
-  text-align: center;
+  position: relative;
 }
 
-.nav-menu {
+.env-banner {
   display: flex;
-  justify-content: center;
-  gap: 2rem;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 0.5rem;
 }
 
-.nav-link {
-  color: white;
-  text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 25px;
-  transition: all 0.3s ease;
-  font-weight: 500;
+.env-tag {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
-.nav-link:hover,
-.nav-link.router-link-active {
-  background: rgba(255,255,255,0.2);
-  transform: translateY(-2px);
-}
-
-.env-test-link {
-  background: #ff6b6b;
-  border: 2px solid #ff6b6b;
-}
-
-.env-test-link:hover {
-  background: #ff5252;
-  border-color: #ff5252;
-}
-
-.data-actions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.btn {
-  padding: 0.5rem 1rem;
+.close-btn {
+  background: none;
   border: none;
-  border-radius: 25px;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.env-details p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+/* 导航栏样式 */
+.navbar {
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-brand h1 {
+  color: #667eea;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.version {
+  background: #667eea;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #666;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.nav-links a.router-link-active,
+.nav-links a:hover {
+  background: #667eea;
+  color: white;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.env-toggle-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease;
 }
 
-.btn-secondary {
-  background: rgba(255,255,255,0.2);
-  color: white;
+.env-toggle-btn:hover {
+  background: #5a6fd8;
 }
 
-.btn-secondary:hover {
-  background: rgba(255,255,255,0.3);
-  transform: translateY(-2px);
+/* 主内容区域 */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.app-main {
-  padding: 0.5rem 2rem;
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .nav-links {
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .main-content {
+    padding: 1rem;
+  }
+  
+  .env-details {
+    font-size: 0.75rem;
+  }
 }
 
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 8px;
+/* 加载动画 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* 添加Notification组件的全局样式 */
-.notification-enter-active,
-.notification-leave-active {
-  transition: all 0.3s ease;
-}
-
-.notification-enter-from,
-.notification-leave-to {
-  opacity: 0;
-  transform: translateX(100%);
+#app {
+  animation: fadeIn 0.5s ease-out;
 }
 </style>

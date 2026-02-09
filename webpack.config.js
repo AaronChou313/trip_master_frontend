@@ -27,12 +27,7 @@ module.exports = (env, argv) => {
           use: {
             loader: 'babel-loader',
             options: {
-              presets: [
-                ['@babel/preset-env', {
-                  useBuiltIns: 'usage',
-                  corejs: 3
-                }]
-              ]
+              presets: ['@babel/preset-env']
             }
           }
         },
@@ -45,19 +40,7 @@ module.exports = (env, argv) => {
     plugins: [
       new VueLoaderPlugin(),
       new HtmlWebpackPlugin({
-        template: './public/index.html',
-        minify: isProduction ? {
-          removeComments: true,
-          collapseWhitespace: true,
-          removeRedundantAttributes: true,
-          useShortDoctype: true,
-          removeEmptyAttributes: true,
-          removeStyleLinkTypeAttributes: true,
-          keepClosingSlash: true,
-          minifyJS: true,
-          minifyCSS: true,
-          minifyURLs: true,
-        } : false
+        template: './public/index.html'
       }),
       new Dotenv({
         path: isProduction ? './.env.production' : './.env.development',
@@ -93,17 +76,9 @@ module.exports = (env, argv) => {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
-            maxSize: 244000, // 限制chunk大小为244KB
           }
         }
-      },
-      runtimeChunk: 'single',
-      minimize: isProduction
-    },
-    performance: {
-      maxEntrypointSize: 512000,
-      maxAssetSize: 512000,
-      hints: isProduction ? 'warning' : false
+      }
     }
   };
 };
