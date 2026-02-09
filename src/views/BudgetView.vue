@@ -184,122 +184,155 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
+import Chart from 'chart.js/auto';
+import budgetService from '../services/budgetService';
+import itineraryService from '../services/itineraryService';
+import apiClient from '../utils/apiClient';
 
 export default {
   name: 'BudgetView',
   setup() {
-    // 响应式数据
+    const route = useRoute();
     const budgets = ref([]);
     const showEditModal = ref(false);
-    const editingBudget = ref({});
+    const editingBudget = ref(null);
     const pieChartRef = ref(null);
     const barChartRef = ref(null);
     let pieChart = null;
     let barChart = null;
 
-    // 计算属性
-    const itineraryBudgets = computed(() => 
-      budgets.value.filter(b => b.category === 'itinerary')
-    );
-    
-    const transportBudgets = computed(() => 
-      budgets.value.filter(b => b.category === 'transport')
-    );
-    
-    const accommodationBudgets = computed(() => 
-      budgets.value.filter(b => b.category === 'accommodation')
-    );
-    
-    const customBudgets = computed(() => 
-      budgets.value.filter(b => b.category === 'custom')
-    );
-    
-    const itineraryTotal = computed(() => 
-      itineraryBudgets.value.reduce((sum, b) => sum + (b.amount || 0), 0)
-    );
-    
-    const transportTotal = computed(() => 
-      transportBudgets.value.reduce((sum, b) => sum + (b.amount || 0), 0)
-    );
-    
-    const accommodationTotal = computed(() => 
-      accommodationBudgets.value.reduce((sum, b) => sum + (b.amount || 0), 0)
-    );
-    
-    const customTotal = computed(() => 
-      customBudgets.value.reduce((sum, b) => sum + (b.amount || 0), 0)
-    );
-    
-    const totalBudget = computed(() => 
-      itineraryTotal.value + transportTotal.value + accommodationTotal.value + customTotal.value
-    );
+    // 按类别分组预算
+    const itineraryBudgets = computed(() => {
+      return budgets.value.filter(budget => budget.category === 'itinerary');
+    });
+
+    const transportBudgets = computed(() => {
+      return budgets.value.filter(budget => budget.category === 'transport');
+    });
+
+    const accommodationBudgets = computed(() => {
+      return budgets.value.filter(budget => budget.category === 'accommodation');
+    });
+
+    const customBudgets = computed(() => {
+      return budgets.value.filter(budget => budget.category === 'custom');
+    });
+
+    // 计算各类别的小计 - 修复数值转换问题
+    const itineraryTotal = computed(() => {
+      const total = itineraryBudgets.value.reduce((sum, budget) => {
+        const amount = parseFloat(budget.amount) || 0;
+        return sum + amount;
+      }, 0);
+      return Math.round(total * 100) / 100; // 保留两位小数
+    });
+
+    const transportTotal = computed(() => {
+      const total = transportBudgets.value.reduce((sum, budget) => {
+        const amount = parseFloat(budget.amount) || 0;
+        return sum + amount;
+      }, 0);
+      return Math.round(total * 100) / 100;
+    });
+
+    const accommodationTotal = computed(() => {
+      const total = accommodationBudgets.value.reduce((sum, budget) => {
+        const amount = parseFloat(budget.amount) || 0;
+        return sum + amount;
+      }, 0);
+      return Math.round(total * 100) / 100;
+    });
+
+    const customTotal = computed(() => {
+      const total = customBudgets.value.reduce((sum, budget) => {
+        const amount = parseFloat(budget.amount) || 0;
+        return sum + amount;
+      }, 0);
+      return Math.round(total * 100) / 100;
+    });
+
+    // 计算总预算
+    const totalBudget = computed(() => {
+      const total = itineraryTotal.value + transportTotal.value + accommodationTotal.value + customTotal.value;
+      return Math.round(total * 100) / 100;
+    });
 
     // 从行程同步预算（按行程统计）
     const syncFromItineraries = async () => {
       try {
-        const response = await fetch('/api/itineraries');
-        if (response.ok) {
-          const itineraries = await response.json();
-          let syncedCount = 0;
-          
-          // 先清空现有的行程预算
-          budgets.value = budgets.value.filter(b => b.category !== 'itinerary');
-          
-          itineraries.forEach(itin => {
-            if (itin.pois && itin.pois.length > 0) {
-              // 计算该行程的总预算（景点预算 + 交通预算）
-              let itineraryTotalBudget = 0;
-              
-              // 计算景点预算
-              itin.pois.forEach(poi => {
-                if (poi.budget > 0) {
-                  itineraryTotalBudget += poi.budget;
-                }
-              });
-              
-              // 计算交通预算
-              itin.pois.forEach((poi, index) => {
-                if (index < itin.pois.length - 1 && poi.transport && poi.transport.budget > 0) {
-                  itineraryTotalBudget += poi.transport.budget;
-                }
-              });
-              
-              // 如果总预算大于0，则添加到行程预算中
-              if (itineraryTotalBudget > 0) {
-                budgets.value.push({
-                  id: `itinerary_${itin.id}`,
-                  name: itin.name || `行程-${itin.id}`,
-                  description: itin.description || `日期: ${itin.date || '未设置'}`,
-                  amount: itineraryTotalBudget,
-                  category: 'itinerary',
-                  sourceType: 'itinerary',
-                  sourceId: itin.id,
-                  createdAt: new Date().toISOString()
-                });
-                syncedCount++;
+        console.log('开始同步行程预算...');
+        const itineraries = await apiClient.get('/api/itineraries');
+        console.log('获取到的行程数据:', itineraries);
+        let syncedCount = 0;
+        
+        // 先清空现有的行程预算
+        budgets.value = budgets.value.filter(b => b.category !== 'itinerary');
+        
+        itineraries.forEach(itin => {
+          if (itin.pois && itin.pois.length > 0) {
+            // 计算该行程的总预算（景点预算 + 交通预算）
+            let itineraryTotalBudget = 0;
+            
+            // 计算景点预算
+            itin.pois.forEach(poi => {
+              if (poi.budget && poi.budget > 0) {
+                console.log(`景点 ${poi.poi?.name} 预算: ${poi.budget}`);
+                itineraryTotalBudget += poi.budget;
               }
+            });
+            
+            // 计算交通预算 - 适配后端数据结构
+            itin.pois.forEach((poi, index) => {
+              // 检查直接在poi对象上的交通字段
+              if (poi.transport_budget && poi.transport_budget > 0) {
+                console.log(`POI ${poi.poi?.name} 交通预算: ${poi.transport_budget}`);
+                itineraryTotalBudget += poi.transport_budget;
+              }
+              // 也检查嵌套的transport对象（为了兼容性）
+              else if (poi.transport && poi.transport.budget && poi.transport.budget > 0) {
+                console.log(`POI ${poi.poi?.name} 嵌套交通预算: ${poi.transport.budget}`);
+                itineraryTotalBudget += poi.transport.budget;
+              }
+            });
+            
+            // 如果总预算大于0，则添加到行程预算中
+            if (itineraryTotalBudget > 0) {
+              const budgetItem = {
+                id: `itinerary_${itin.id}`,
+                name: itin.name || `行程-${itin.id}`,
+                description: itin.description || `日期: ${itin.date || '未设置'}`,
+                amount: itineraryTotalBudget,
+                category: 'itinerary',
+                sourceType: 'itinerary',
+                sourceId: itin.id,
+                createdAt: new Date().toISOString()
+              };
+              console.log('创建行程预算项:', budgetItem);
+              budgets.value.push(budgetItem);
+              syncedCount++;
+            } else {
+              console.log(`行程 ${itin.name} 总预算为0，不添加`);
             }
-          });
-          
-          if (syncedCount > 0) {
-            await saveBudgets();
-            window.notificationService?.showSuccess(`成功同步了 ${syncedCount} 个行程预算`);
-          } else {
-            window.notificationService?.showInfo('没有需要同步的行程预算');
           }
+        });
+        
+        if (syncedCount > 0) {
+          await saveBudgets();
+          window.notificationService?.showSuccess(`成功同步了 ${syncedCount} 个行程预算`);
+        } else {
+          window.notificationService?.showInfo('没有需要同步的行程预算');
         }
       } catch (error) {
         console.error('同步失败:', error);
-        window.notificationService?.showError('同步失败，请重试');
-
+        window.notificationService?.showError(`同步失败: ${error.message}`);
       }
     };
 
     // 添加交通预算
     const addTransportBudget = () => {
       editingBudget.value = {
-        id: null,
         name: '',
         description: '',
         amount: 0,
@@ -311,7 +344,6 @@ export default {
     // 添加住宿预算
     const addAccommodationBudget = () => {
       editingBudget.value = {
-        id: null,
         name: '',
         description: '',
         amount: 0,
@@ -323,7 +355,6 @@ export default {
     // 添加自定义预算
     const addCustomBudget = () => {
       editingBudget.value = {
-        id: null,
         name: '',
         description: '',
         amount: 0,
@@ -338,232 +369,193 @@ export default {
       showEditModal.value = true;
     };
 
-    // 保存预算
-    const saveBudget = async () => {
+    // 保存所有预算
+    const saveBudgets = async () => {
       try {
-        let response;
-        const budgetData = { ...editingBudget.value };
+        // 先清除所有现有预算
+        await apiClient.delete('/api/budgets');
         
-        if (budgetData.id) {
-          // 更新现有预算
-          response = await fetch(`/api/budgets/${budgetData.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(budgetData)
-          });
-        } else {
-          // 创建新预算
-          budgetData.id = Date.now().toString();
-          budgetData.createdAt = new Date().toISOString();
-          response = await fetch('/api/budgets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(budgetData)
-          });
-        }
-
-        if (response.ok) {
-          await loadBudgets();
-          closeEditModal();
-          window.notificationService?.showSuccess('预算保存成功！', 8000);
+        // 批量创建新预算
+        if (budgets.value.length > 0) {
+          await apiClient.post('/api/budgets', budgets.value);
         }
       } catch (error) {
-        console.error('预算保存失败:', error);
-        window.notificationService?.showError('保存失败，请重试', 8000);
+        console.error('保存预算失败:', error);
+        throw error;
+      }
+    };
+
+    // 保存预算
+    const saveBudget = async () => {
+      if (!editingBudget.value) return;
+
+      try {
+        // 确保金额是数字类型
+        editingBudget.value.amount = parseFloat(editingBudget.value.amount) || 0;
+        
+        if (editingBudget.value.id) {
+          await budgetService.update(editingBudget.value.id, editingBudget.value);
+        } else {
+          await budgetService.create(editingBudget.value);
+        }
+        
+        await loadBudgets();
+        closeEditModal();
+        window.notificationService?.showSuccess('预算保存成功');
+      } catch (error) {
+        console.error('保存预算失败:', error);
+        window.notificationService?.showError(`保存预算失败: ${error.message}`);
       }
     };
 
     // 删除预算
     const deleteBudget = async (id) => {
-      // 使用非阻塞确认
-      if (window.confirm('确定要删除这个预算项目吗？')) {
-        try {
-          const response = await fetch(`/api/budgets/${id}`, { method: 'DELETE' });
-          if (response.ok) {
-            await loadBudgets();
-            window.notificationService?.showSuccess('预算删除成功！', 8000);
-          }
-        } catch (error) {
-          console.error('删除失败:', error);
-          window.notificationService?.showError('删除失败，请重试', 8000);
-        }
+      if (!confirm('确定要删除这个预算项吗？')) return;
+      
+      try {
+        await budgetService.delete(id);
+        await loadBudgets();
+        window.notificationService?.showSuccess('预算删除成功');
+      } catch (error) {
+        console.error('删除预算失败:', error);
+        window.notificationService?.showError(`删除预算失败: ${error.message}`);
       }
     };
 
     // 关闭编辑模态框
     const closeEditModal = () => {
       showEditModal.value = false;
-      editingBudget.value = {};
-    };
-
-    // 保存所有预算
-    const saveBudgets = async () => {
-      try {
-        // 这里可以批量保存所有预算
-        // 为了简化，逐个保存
-        for (const budget of budgets.value) {
-          if (!budget.createdAt) {
-            await fetch('/api/budgets', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(budget)
-            });
-          }
-        }
-      } catch (error) {
-        console.error('预算保存失败:', error);
-      }
+      editingBudget.value = null;
     };
 
     // 加载预算数据
     const loadBudgets = async () => {
       try {
-        const response = await fetch('/api/budgets');
-        if (response.ok) {
-          budgets.value = await response.json();
-        }
+        console.log('开始加载预算数据...');
+        const data = await budgetService.getAll();
+        console.log('获取到的预算数据:', data);
+        budgets.value = Array.isArray(data) ? data : [];
+        console.log('处理后的预算列表:', budgets.value);
       } catch (error) {
-        console.error('预算加载失败:', error);
+        console.error('加载预算失败:', error);
+        window.notificationService?.showError(`加载预算失败: ${error.message}`);
+        budgets.value = []; // 确保即使出错也设置为空数组
       }
     };
 
-    // 绘制饼图
-    const drawPieChart = () => {
-      if (!pieChartRef.value) return;
-
-      const ctx = pieChartRef.value.getContext('2d');
-      const centerX = pieChartRef.value.width / 2;
-      const centerY = pieChartRef.value.height / 2;
-      const radius = Math.min(centerX, centerY) - 50;
-
-      // 清除画布
-      ctx.clearRect(0, 0, pieChartRef.value.width, pieChartRef.value.height);
-
-      const data = [
-        { label: '行程', value: itineraryTotal.value, color: '#FF6384' },
-        { label: '交通', value: transportTotal.value, color: '#36A2EB' },
-        { label: '住宿', value: accommodationTotal.value, color: '#4BC0C0' },
-        { label: '其他', value: customTotal.value, color: '#FFCE56' }
-      ];
-
-      const total = data.reduce((sum, item) => sum + item.value, 0);
-      if (total === 0) {
-        // 没有数据时显示文本
-        ctx.fillStyle = '#999';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('暂无预算数据', centerX, centerY);
-        return;
-      }
-
-      let startAngle = 0;
-      
-      data.forEach(item => {
-        if (item.value <= 0) return;
-        
-        const sliceAngle = (item.value / total) * 2 * Math.PI;
-        
-        // 绘制扇形
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-        ctx.closePath();
-        ctx.fillStyle = item.color;
-        ctx.fill();
-        
-        // 绘制标签
-        const midAngle = startAngle + sliceAngle / 2;
-        const labelX = centerX + (radius + 30) * Math.cos(midAngle);
-        const labelY = centerY + (radius + 30) * Math.sin(midAngle);
-        
-        ctx.fillStyle = '#333';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${item.label}: ${Math.round((item.value/total)*100)}%`, labelX, labelY);
-        
-        startAngle += sliceAngle;
-      });
-    };
-
-    // 绘制柱状图
-    const drawBarChart = () => {
-      if (!barChartRef.value) return;
-
-      const ctx = barChartRef.value.getContext('2d');
-      const width = barChartRef.value.width;
-      const height = barChartRef.value.height;
-      
-      // 清除画布
-      ctx.clearRect(0, 0, width, height);
-
-      const data = [
-        { label: '行程', value: itineraryTotal.value, color: '#FF6384' },
-        { label: '交通', value: transportTotal.value, color: '#36A2EB' },
-        { label: '住宿', value: accommodationTotal.value, color: '#4BC0C0' },
-        { label: '其他', value: customTotal.value, color: '#FFCE56' }
-      ];
-
-      const maxValue = Math.max(...data.map(d => d.value));
-      if (maxValue === 0) {
-        // 没有数据时显示文本
-        ctx.fillStyle = '#999';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('暂无预算数据', width/2, height/2);
-        return;
-      }
-
-      const barWidth = width / (data.length + 1);
-      const chartHeight = height - 60;
-      
-      data.forEach((item, index) => {
-        const barHeight = (item.value / maxValue) * chartHeight;
-        const x = (index + 1) * barWidth - barWidth/2;
-        const y = height - 40 - barHeight;
-        
-        // 绘制柱子
-        ctx.fillStyle = item.color;
-        ctx.fillRect(x - 20, y, 40, barHeight);
-        
-        // 绘制数值
-        ctx.fillStyle = '#333';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`¥${item.value.toLocaleString()}`, x, y - 5);
-        
-        // 绘制标签
-        ctx.fillText(item.label, x, height - 20);
-      });
-    };
-
-    // 组件挂载时初始化
-    onMounted(async () => {
-      await loadBudgets();
-      
-      // 自动同步行程预算
-      await syncFromItineraries();
-      
-      // 初始化图表
+    // 初始化图表
+    const initCharts = () => {
       nextTick(() => {
         if (pieChartRef.value) {
-          pieChartRef.value.width = pieChartRef.value.offsetWidth;
-          pieChartRef.value.height = 300;
+          const ctx = pieChartRef.value.getContext('2d');
+          if (pieChart) {
+            pieChart.destroy();
+          }
+          
+          const categoryNames = ['行程', '交通', '住宿', '其他'];
+          const categoryTotals = [
+            itineraryTotal.value,
+            transportTotal.value,
+            accommodationTotal.value,
+            customTotal.value
+          ];
+          
+          // 过滤掉为0的类别
+          const filteredLabels = categoryNames.filter((_, index) => categoryTotals[index] > 0);
+          const filteredData = categoryTotals.filter(total => total > 0);
+          
+          if (filteredData.length > 0) {
+            pieChart = new Chart(ctx, {
+              type: 'pie',
+              data: {
+                labels: filteredLabels,
+                datasets: [{
+                  data: filteredData,
+                  backgroundColor: [
+                    '#FF6384',
+                    '#36A2EB',
+                    '#FFCE56',
+                    '#4BC0C0'
+                  ]
+                }]
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'bottom'
+                  }
+                }
+              }
+            });
+          }
         }
+
         if (barChartRef.value) {
-          barChartRef.value.width = barChartRef.value.offsetWidth;
-          barChartRef.value.height = 300;
+          const ctx = barChartRef.value.getContext('2d');
+          if (barChart) {
+            barChart.destroy();
+          }
+          
+          barChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: ['行程', '交通', '住宿', '其他'],
+              datasets: [{
+                label: '预算金额',
+                data: [
+                  itineraryTotal.value,
+                  transportTotal.value,
+                  accommodationTotal.value,
+                  customTotal.value
+                ],
+                backgroundColor: [
+                  '#FF6384',
+                  '#36A2EB',
+                  '#FFCE56',
+                  '#4BC0C0'
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
         }
-        
-        drawPieChart();
-        drawBarChart();
       });
+    };
+
+    // 监听预算数据变化，重新绘制图表
+    watch([itineraryTotal, transportTotal, accommodationTotal, customTotal], () => {
+      initCharts();
     });
 
-    // 监听预算变化，重新绘制图表
-    const watchBudgets = () => {
-      drawPieChart();
-      drawBarChart();
-    };
+    // 监听路由变化，当切换到预算页面时自动同步
+    watch(() => route.name, async (newRouteName) => {
+      if (newRouteName === 'Budget') {
+        console.log('切换到预算页面，自动同步行程预算...');
+        await loadBudgets();
+        await syncFromItineraries();
+        initCharts();
+      }
+    });
+
+    // 组件挂载时加载数据
+    onMounted(async () => {
+      console.log('预算页面挂载，开始加载数据...');
+      await loadBudgets();
+      // 如果当前就在预算页面，执行同步
+      if (route.name === 'Budget') {
+        await syncFromItineraries();
+      }
+      initCharts();
+      console.log('预算数据加载完成');
+    });
 
     return {
       budgets,
@@ -587,7 +579,9 @@ export default {
       editBudget,
       saveBudget,
       deleteBudget,
-      closeEditModal
+      closeEditModal,
+      loadBudgets,
+      initCharts
     };
   }
 };
@@ -598,6 +592,7 @@ export default {
   padding: 1rem;
   max-width: 1400px;
   margin: 0 auto;
+  height: calc(100vh - 120px);
 }
 
 .page-title {

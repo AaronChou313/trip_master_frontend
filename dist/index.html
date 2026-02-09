@@ -1,1 +1,9 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>旅行规划大师 TripMaster</title><script src="https://webapi.amap.com/maps?v=1.4.15&key=your_amap_api_key_here"></script><script defer="defer" src="vendors.f3b2fe79af6d9afd3c6c.js"></script><script defer="defer" src="main.a44e1a30ed7652365adf.js"></script></head><body><div id="app"></div></body></html>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>旅行规划大师 TripMaster</title><script defer="defer" src="9.e488ba088b0fb4ce967c.js"></script><script defer="defer" src="main.b1d3f26cd9ab07268972.js"></script></head><body><div id="app"></div><script>// 动态加载高德地图SDK
+        const amapKey = 'your_actual_amap_api_key_here' || 'your_amap_api_key_here';
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = `https://webapi.amap.com/maps?v=1.4.15&key=${amapKey}`;
+        script.onerror = function() {
+            console.error('高德地图SDK加载失败');
+        };
+        document.head.appendChild(script);</script></body></html>

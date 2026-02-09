@@ -69,6 +69,7 @@
 
 <script>
 import { ref, onMounted, nextTick, watch } from 'vue';
+import poiService from '../services/poiService';
 
 export default {
   name: 'PoisView',
@@ -238,24 +239,13 @@ export default {
       }
 
       try {
-        const response = await fetch('/api/pois', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(place)
-        });
+        const newPoi = await poiService.create(place);
+        pois.value.push(newPoi);
+        window.notificationService?.showSuccess(`${place.name} 已添加到兴趣点`);
         
-        if (response.ok) {
-          const newPoi = await response.json();
-          pois.value.push(newPoi);
-          window.notificationService?.showSuccess(`${place.name} 已添加到兴趣点`);
-          
-          // 重新标记所有兴趣点
-          await nextTick();
-          markPoiMarkers();
-        } else {
-          const errorText = await response.text();
-          window.notificationService?.showError(`添加失败: ${errorText}`);
-        }
+        // 重新标记所有兴趣点
+        await nextTick();
+        markPoiMarkers();
       } catch (error) {
         console.error('添加兴趣点失败:', error);
         window.notificationService?.showError(`添加失败: ${error.message}`);
@@ -272,18 +262,13 @@ export default {
       }
 
       try {
-        const response = await fetch(`/api/pois/${id}`, { method: 'DELETE' });
-        if (response.ok) {
-          pois.value = pois.value.filter(poi => poi.id !== id);
-          window.notificationService?.showSuccess(`${poiToRemove.name} 已移除`);
-          
-          // 重新标记所有兴趣点
-          await nextTick();
-          markPoiMarkers();
-        } else {
-          const errorText = await response.text();
-          window.notificationService?.showError(`移除失败: ${errorText}`);
-        }
+        await poiService.delete(id);
+        pois.value = pois.value.filter(poi => poi.id !== id);
+        window.notificationService?.showSuccess(`${poiToRemove.name} 已移除`);
+        
+        // 重新标记所有兴趣点
+        await nextTick();
+        markPoiMarkers();
       } catch (error) {
         console.error('移除兴趣点失败:', error);
         window.notificationService?.showError(`移除失败: ${error.message}`);
@@ -325,19 +310,15 @@ export default {
     // 加载兴趣点
     const loadPois = async () => {
       try {
-        const response = await fetch('/api/pois');
-        if (response.ok) {
-          pois.value = await response.json();
-          console.log('加载兴趣点数量:', pois.value.length);
-          
-          // 标记兴趣点
-          await nextTick();
-          markPoiMarkers();
-        } else {
-          console.error('加载兴趣点失败，状态码:', response.status);
-        }
+        pois.value = await poiService.getAll();
+        console.log('加载兴趣点数量:', pois.value.length);
+        
+        // 标记兴趣点
+        await nextTick();
+        markPoiMarkers();
       } catch (error) {
         console.error('加载兴趣点失败:', error);
+        window.notificationService?.showError(`加载失败: ${error.message}`);
       }
     };
 
@@ -404,7 +385,7 @@ export default {
 .pois-container {
   display: grid;
   grid-template-columns: 300px 1fr 300px;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 120px);
   gap: 1rem;
   padding: 1rem;
   overflow: hidden; /* 防止整个容器滚动 */

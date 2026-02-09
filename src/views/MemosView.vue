@@ -91,6 +91,7 @@
 <script>
 import { ref, computed, onMounted, nextTick } from 'vue';
 import Notification from '../components/Notification.vue';
+import memoService from '../services/memoService';
 
 export default {
   name: 'MemosView',
@@ -117,15 +118,10 @@ export default {
     const loadMemos = async () => {
       try {
         isLoading.value = true;
-        const response = await fetch('/api/memos');
-        if (response.ok) {
-          memos.value = await response.json();
-        } else {
-          window.notificationService?.showError('加载备忘录失败');
-        }
+        memos.value = await memoService.getAll();
       } catch (error) {
         console.error('Load memos error:', error);
-        window.notificationService?.showError('网络错误，请稍后重试');
+        window.notificationService?.showError(`加载失败: ${error.message}`);
       } finally {
         isLoading.value = false;
       }
@@ -136,28 +132,16 @@ export default {
       try {
         const newMemo = {
           title: '新备忘录',
-          content: '',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          content: ''
         };
 
-        const response = await fetch('/api/memos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newMemo)
-        });
-
-        if (response.ok) {
-          const createdMemo = await response.json();
-          memos.value.push(createdMemo);
-          activeMemoId.value = createdMemo.id;
-          window.notificationService?.showSuccess('备忘录创建成功');
-        } else {
-          window.notificationService?.showError('创建备忘录失败');
-        }
+        const createdMemo = await memoService.create(newMemo);
+        memos.value.push(createdMemo);
+        activeMemoId.value = createdMemo.id;
+        window.notificationService?.showSuccess('备忘录创建成功');
       } catch (error) {
         console.error('Create memo error:', error);
-        window.notificationService?.showError('网络错误，请稍后重试');
+        window.notificationService?.showError(`创建失败: ${error.message}`);
       }
     };
 
@@ -176,22 +160,14 @@ export default {
         clearTimeout(updateMemo.debounceTimer);
         updateMemo.debounceTimer = setTimeout(async () => {
           const memoToUpdate = {
-            ...activeMemo.value,
-            updatedAt: new Date().toISOString()
+            ...activeMemo.value
           };
 
-          const response = await fetch(`/api/memos/${activeMemo.value.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(memoToUpdate)
-          });
-
-          if (!response.ok) {
-            window.notificationService?.showError('保存失败');
-          }
+          await memoService.update(activeMemo.value.id, memoToUpdate);
         }, 500);
       } catch (error) {
         console.error('Update memo error:', error);
+        window.notificationService?.showError(`保存失败: ${error.message}`);
       }
     };
 
@@ -200,22 +176,15 @@ export default {
       if (!confirm('确定要删除这个备忘录吗？')) return;
 
       try {
-        const response = await fetch(`/api/memos/${id}`, {
-          method: 'DELETE'
-        });
-
-        if (response.ok) {
-          memos.value = memos.value.filter(memo => memo.id !== id);
-          if (activeMemoId.value === id) {
-            activeMemoId.value = memos.value.length > 0 ? memos.value[0].id : null;
-          }
-          window.notificationService?.showSuccess('备忘录删除成功');
-        } else {
-          window.notificationService?.showError('删除失败');
+        await memoService.delete(id);
+        memos.value = memos.value.filter(memo => memo.id !== id);
+        if (activeMemoId.value === id) {
+          activeMemoId.value = memos.value.length > 0 ? memos.value[0].id : null;
         }
+        window.notificationService?.showSuccess('备忘录删除成功');
       } catch (error) {
         console.error('Delete memo error:', error);
-        window.notificationService?.showError('网络错误，请稍后重试');
+        window.notificationService?.showError(`删除失败: ${error.message}`);
       }
     };
 
@@ -301,6 +270,7 @@ export default {
   max-width: 1400px;
   margin: 0 auto;
   padding: 1rem;
+  height: calc(100vh - 120px);
 }
 
 .memos-header {
