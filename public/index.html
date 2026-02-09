@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TripMaster 旅行规划助手 - 智能行程规划工具">
+    <meta name="keywords" content="旅行,行程规划,预算管理,地图导航">
     <title>旅行规划大师 TripMaster</title>
-    <script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=your_amap_api_key_here"></script>
+    <% if (process.env.VUE_APP_AMAP_API_KEY) { %>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=<%= process.env.VUE_APP_AMAP_API_KEY %>"></script>
+    <% } %>
 </head>
 <body>
     <div id="app"></div>
