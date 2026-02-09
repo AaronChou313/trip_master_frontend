@@ -1,91 +1,154 @@
 # Vercel 部署指南
 
-## 部署准备
+## 多环境配置说明
 
-### 1. 项目配置已完成
-- ✅ 已添加 `vercel.json` 配置文件
-- ✅ 已更新 `package.json` 构建脚本
-- ✅ Webpack 配置支持生产环境构建
+本项目支持三种环境配置：
 
-### 2. 环境变量设置
-在 Vercel 项目设置中需要配置以下环境变量：
-
+### 1. 本地开发环境 (.env.development)
+```bash
+npm run dev
+# 或
+npm run build:dev
 ```
-VUE_APP_API_BASE_URL=https://your-backend-api-url.com
-VUE_APP_AMAP_KEY=your_amap_api_key
+
+### 2. 生产环境 (.env.production)
+```bash
+npm run build
+# 或
+npm run build:prod
+```
+
+### 3. Vercel 部署环境
+通过 Vercel Dashboard 配置环境变量
+
+## 环境变量文件说明
+
+### .env (默认配置)
+包含所有环境的基础配置，作为 fallback 使用。
+
+### .env.development (开发环境)
+```
+VUE_APP_API_BASE_URL=https://tripmasterbackend-production-78ff.up.railway.app
+VUE_APP_AMAP_KEY=e953f2ed40d6ba23010ade13fe41d628
+NODE_ENV=development
+```
+
+### .env.production (生产环境)
+```
+VUE_APP_API_BASE_URL=https://tripmasterbackend-production-78ff.up.railway.app
+VUE_APP_AMAP_KEY=e953f2ed40d6ba23010ade13fe41d628
 NODE_ENV=production
 ```
 
-## 部署方式
+## 本地开发测试
 
-### 方式一：通过 Vercel CLI（推荐）
+### 1. 环境变量验证
+在开发过程中，可以使用 EnvChecker 组件来验证环境变量配置：
 
-1. 安装 Vercel CLI：
+```javascript
+// 在需要的页面中引入
+import EnvChecker from '@/components/EnvChecker.vue';
+
+// 在模板中使用
+<EnvChecker />
+```
+
+### 2. 构建测试
 ```bash
+# 测试开发环境构建
+npm run build:dev
+
+# 测试生产环境构建
+npm run build:prod
+
+# 查看构建输出
+ls dist/
+```
+
+## Vercel 部署配置
+
+### 必需的环境变量
+在 Vercel Dashboard → Settings → Environment Variables 中添加：
+
+```
+VUE_APP_API_BASE_URL=https://tripmasterbackend-production-78ff.up.railway.app
+VUE_APP_AMAP_KEY=e953f2ed40d6ba23010ade13fe41d628
+NODE_ENV=production
+```
+
+### 部署步骤
+
+#### 方式一：Vercel CLI
+```bash
+# 安装 Vercel CLI
 npm install -g vercel
-```
 
-2. 登录 Vercel：
-```bash
+# 登录
 vercel login
-```
 
-3. 部署项目：
-```bash
+# 首次部署
 vercel
-```
 
-4. 后续部署：
-```bash
+# 生产环境部署
 vercel --prod
 ```
 
-### 方式二：通过 GitHub 集成
+#### 方式二：GitHub 集成
+1. 推送代码到 GitHub
+2. 在 Vercel Dashboard 创建项目
+3. 选择 GitHub 仓库
+4. 配置环境变量
+5. 部署
 
-1. 将代码推送到 GitHub 仓库
-2. 在 [Vercel Dashboard](https://vercel.com/dashboard) 创建新项目
-3. 选择对应的 GitHub 仓库
-4. Vercel 会自动检测并配置构建设置
-5. 添加环境变量
-6. 点击部署
+## 故障排除
 
-### 方式三：手动上传
+### 1. 环境变量未生效
+- 检查环境变量名称是否正确（必须以 `VUE_APP_` 开头）
+- 确认在正确的环境中配置了变量
+- Vercel 部署后需要重新部署才能生效
 
-1. 构建项目：
-```bash
-npm run build
+### 2. 页面空白问题
+使用 EnvChecker 组件检查：
+- 环境变量是否正确加载
+- API 连接是否正常
+- 控制台是否有错误信息
+
+### 3. API 请求失败
+- 验证 `VUE_APP_API_BASE_URL` 是否正确
+- 检查后端服务是否在线
+- 确认 CORS 配置
+
+### 4. 地图功能异常
+- 验证高德地图 API Key 是否有效
+- 检查 Key 是否启用了相应的服务
+- 确认域名白名单配置
+
+## 调试工具
+
+### EnvChecker 组件功能
+- 显示当前环境变量状态
+- 测试 API 连接
+- 实时刷新环境信息
+- 提供详细的错误诊断
+
+### 浏览器开发者工具
+```javascript
+// 在控制台中查看环境变量
+console.log('API Base URL:', process.env.VUE_APP_API_BASE_URL);
+console.log('AMAP Key:', process.env.VUE_APP_AMAP_KEY);
+console.log('Node Env:', process.env.NODE_ENV);
 ```
 
-2. 将 `dist` 目录内容上传到 Vercel
+## 最佳实践
 
-## 重要注意事项
+1. **环境隔离**：不同环境使用不同的 API 地址和密钥
+2. **安全配置**：敏感信息只在部署平台配置，不在代码中硬编码
+3. **定期验证**：部署后及时验证各项功能是否正常
+4. **监控日志**：关注控制台错误和网络请求状态
 
-### 1. API 代理配置
-由于这是 SPA 应用，API 请求需要直接指向后端服务，而不是通过代理。
+## 注意事项
 
-### 2. 路由配置
-已配置 `historyApiFallback`，支持 Vue Router 的 History 模式。
-
-### 3. 环境变量
-- 确保 `VUE_APP_API_BASE_URL` 指向正确的后端 API 地址
-- 高德地图 API Key 需要是有效的生产环境密钥
-
-### 4. 域名配置
-部署后可以在 Vercel 控制台配置自定义域名。
-
-## 常见问题
-
-### Q: 部署后页面空白？
-A: 检查浏览器控制台错误，确认环境变量是否正确设置。
-
-### Q: API 请求失败？
-A: 确认 `VUE_APP_API_BASE_URL` 环境变量指向正确的后端地址。
-
-### Q: 地图无法显示？
-A: 检查高德地图 API Key 是否有效且已启用相应服务。
-
-## 后续维护
-
-- 每次代码更新后重新部署
-- 定期检查环境变量是否过期
-- 监控 Vercel 提供的性能指标
+- `.env` 文件不会被提交到版本控制系统
+- Vercel 环境变量优先级高于本地 `.env` 文件
+- 构建后环境变量会被内联到 JavaScript bundle 中
+- 修改环境变量后需要重新部署才能生效
