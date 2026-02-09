@@ -13,7 +13,7 @@ module.exports = (env, argv) => {
       filename: isProduction ? '[name].[contenthash].js' : '[name].js',
       chunkFilename: isProduction ? '[name].[contenthash].chunk.js' : '[name].chunk.js',
       clean: true,
-      publicPath: '/'
+      publicPath: ''  // 改为相对路径，适应Vercel部署
     },
     module: {
       rules: [
