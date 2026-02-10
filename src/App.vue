@@ -22,6 +22,9 @@
           <div class="user-info">
             <span class="username">欢迎, {{ currentUser?.username }}</span>
             <div class="data-actions">
+              <router-link to="/profile" class="btn btn-secondary profile-btn">
+                ⚙️ 个人设置
+              </router-link>
               <button @click="exportData" class="btn btn-secondary">导出数据</button>
               <label class="btn btn-secondary">
                 导入数据
@@ -291,6 +294,15 @@ body {
 .btn-secondary:hover {
   background: rgba(255,255,255,0.3);
   transform: translateY(-2px);
+}
+
+.profile-btn {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.profile-btn.router-link-active {
+  background: rgba(255,255,255,0.3);
 }
 
 .logout-btn {

@@ -66,7 +66,7 @@ class AuthService {
 
   async getCurrentUser() {
     if (!this.token) return null;
-    
+
     try {
       const response = await fetch(`${this.baseURL}/api/auth/me`, {
         headers: {
@@ -81,6 +81,33 @@ class AuthService {
     } catch (error) {
       console.error('获取用户信息失败:', error);
       return null;
+    }
+  }
+
+  async updateUser(userData) {
+    if (!this.token) {
+      return { success: false, error: '未登录' };
+    }
+
+    try {
+      const response = await fetch(`${this.baseURL}/api/auth/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.token}`
+        },
+        body: JSON.stringify(userData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        return { success: true, user: data };
+      } else {
+        return { success: false, error: data.error || '更新失败' };
+      }
+    } catch (error) {
+      return { success: false, error: '网络错误，请稍后重试' };
     }
   }
 

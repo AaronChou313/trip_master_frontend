@@ -4,6 +4,7 @@ import ItineraryView from '../views/ItineraryView.vue';
 import BudgetView from '../views/BudgetView.vue';
 import MemosView from '../views/MemosView.vue';
 import GuideView from '../views/GuideView.vue';
+import ProfileView from '../views/ProfileView.vue';
 import DeployCheck from '../views/DeployCheck.vue';
 
 const routes = [
@@ -35,6 +36,11 @@ const routes = [
     path: '/guide',
     name: 'Guide',
     component: GuideView
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: ProfileView
   },
   {
     path: '/deploy-check',
