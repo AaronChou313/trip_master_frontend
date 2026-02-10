@@ -124,6 +124,7 @@ export default {
         window.notificationService?.showError(`加载失败: ${error.message}`);
       } finally {
         isLoading.value = false;
+        window.notificationService?.showSuccess(`成功加载${memos.value.length}条备忘录`);
       }
     };
 

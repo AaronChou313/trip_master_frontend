@@ -387,15 +387,33 @@ export default {
         const itineraries = await apiClient.get('/api/itineraries');
         console.log('获取到的行程数据:', itineraries);
         let syncedCount = 0;
-        
-        // 先清空现有的行程预算
-        budgets.value = budgets.value.filter(b => b.category !== 'itinerary');
-        
+        let deletedCount = 0;
+        let updatedCount = 0;
+
+        // 从现有预算的 id 中提取行程ID（格式为 itinerary_${itin.id}）
+        const extractItineraryId = (budgetId) => {
+          if (budgetId && budgetId.startsWith('itinerary_')) {
+            return budgetId.replace('itinerary_', '');
+          }
+          return null;
+        };
+
+        const existingItineraryIds = new Set(
+          budgets.value
+            .filter(b => b.category === 'itinerary')
+            .map(b => extractItineraryId(b.id))
+            .filter(id => id !== null)
+        );
+        console.log('现有行程预算ID:', existingItineraryIds);
+
+        // 构建新的行程预算项
+        const newBudgetItems = [];
+
         itineraries.forEach(itin => {
           if (itin.pois && itin.pois.length > 0) {
             // 计算该行程的总预算（景点预算 + 交通预算）
             let itineraryTotalBudget = 0;
-            
+
             // 计算景点预算
             itin.pois.forEach(poi => {
               if (poi.budget && poi.budget > 0) {
@@ -403,7 +421,7 @@ export default {
                 itineraryTotalBudget += poi.budget;
               }
             });
-            
+
             // 计算交通预算 - 适配后端数据结构
             itin.pois.forEach((poi, index) => {
               // 检查直接在poi对象上的交通字段
@@ -417,7 +435,7 @@ export default {
                 itineraryTotalBudget += poi.transport.budget;
               }
             });
-            
+
             // 如果总预算大于0，则添加到行程预算中
             if (itineraryTotalBudget > 0) {
               const budgetItem = {
@@ -425,26 +443,98 @@ export default {
                 name: itin.name || `行程-${itin.id}`,
                 description: itin.description || `日期: ${itin.date || '未设置'}`,
                 amount: itineraryTotalBudget,
+                actualAmount: 0,
                 category: 'itinerary',
                 sourceType: 'itinerary',
                 sourceId: itin.id,
                 createdAt: new Date().toISOString()
               };
               console.log('创建行程预算项:', budgetItem);
-              budgets.value.push(budgetItem);
+              newBudgetItems.push(budgetItem);
               syncedCount++;
             } else {
               console.log(`行程 ${itin.name} 总预算为0，不添加`);
             }
           }
         });
-        
-        if (syncedCount > 0) {
-          await saveBudgets();
-          window.notificationService?.showSuccess(`成功同步了 ${syncedCount} 个行程预算`);
+
+        // 获取新行程的ID集合
+        const newItineraryIds = new Set(newBudgetItems.map(b => b.sourceId));
+
+        // 找出需要删除的行程（已删除的行程）
+        const idsToDelete = [...existingItineraryIds].filter(id => !newItineraryIds.has(id));
+        console.log('需要删除的行程预算:', idsToDelete);
+
+        // 删除已删除行程对应的预算项
+        for (const itineraryId of idsToDelete) {
+          const budgetToDelete = budgets.value.find(b =>
+            b.category === 'itinerary' &&
+            extractItineraryId(b.id) === itineraryId
+          );
+          if (budgetToDelete) {
+            try {
+              await budgetService.delete(budgetToDelete.id);
+              budgets.value = budgets.value.filter(b => b.id !== budgetToDelete.id);
+              deletedCount++;
+              console.log('删除行程预算:', budgetToDelete.name);
+            } catch (err) {
+              console.error('删除行程预算失败:', budgetToDelete.id, err);
+            }
+          }
+        }
+
+        // 保存或更新新的行程预算
+        for (const budgetItem of newBudgetItems) {
+          const existingBudget = budgets.value.find(b =>
+            b.category === 'itinerary' &&
+            extractItineraryId(b.id) === budgetItem.sourceId
+          );
+
+          if (existingBudget) {
+            // 更新现有预算（只有当金额变化时）
+            if (existingBudget.amount !== budgetItem.amount) {
+              try {
+                await budgetService.update(existingBudget.id, budgetItem);
+                Object.assign(existingBudget, budgetItem);
+                updatedCount++;
+                console.log('更新行程预算:', existingBudget.name);
+              } catch (err) {
+                console.error('更新行程预算失败:', existingBudget.id, err);
+              }
+            } else {
+              console.log('行程预算未变化，跳过:', existingBudget.name);
+            }
+          } else {
+            // 创建新预算
+            try {
+              const created = await budgetService.create(budgetItem);
+              budgetItem.id = created.id;
+              budgets.value.push(budgetItem);
+              console.log('创建行程预算:', budgetItem.name);
+            } catch (err) {
+              console.error('创建行程预算失败:', budgetItem, err);
+            }
+          }
+        }
+
+        // 显示结果通知
+        if (syncedCount > 0 || deletedCount > 0) {
+          let message = `同步完成：新增 ${syncedCount - updatedCount} 个，更新 ${updatedCount} 个，删除 ${deletedCount} 个`;
+          if (deletedCount > 0 && syncedCount === 0) {
+            message = `已删除 ${deletedCount} 个行程预算`;
+          } else if (syncedCount > 0 && deletedCount === 0 && updatedCount === 0) {
+            message = `成功同步了 ${syncedCount} 个行程预算`;
+          } else if (updatedCount > 0 && syncedCount - updatedCount === 0) {
+            message = `已更新 ${updatedCount} 个行程预算`;
+          }
+          window.notificationService?.showSuccess(message);
         } else {
           window.notificationService?.showInfo('没有需要同步的行程预算');
         }
+
+        // 重新加载预算确保数据一致
+        await loadBudgets();
+
       } catch (error) {
         console.error('同步失败:', error);
         window.notificationService?.showError(`同步失败: ${error.message}`);
@@ -488,22 +578,6 @@ export default {
     const editBudget = (budget) => {
       editingBudget.value = { ...budget };
       showEditModal.value = true;
-    };
-
-    // 保存所有预算
-    const saveBudgets = async () => {
-      try {
-        // 先清除所有现有预算
-        await apiClient.delete('/api/budgets');
-        
-        // 批量创建新预算
-        if (budgets.value.length > 0) {
-          await apiClient.post('/api/budgets', budgets.value);
-        }
-      } catch (error) {
-        console.error('保存预算失败:', error);
-        throw error;
-      }
     };
 
     // 保存预算
@@ -697,6 +771,7 @@ export default {
     onMounted(async () => {
       console.log('预算页面挂载，开始加载数据...');
       await loadBudgets();
+      await syncFromItineraries();
       initCharts();
       console.log('预算数据加载完成');
     });

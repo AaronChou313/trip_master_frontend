@@ -279,6 +279,7 @@ export default {
         itineraries.value = processedData;
         console.log('\n=== 最终行程列表 ===');
         console.log('行程数量:', itineraries.value.length);
+        window.notificationService?.showSuccess(`成功加载${itineraries.value.length}条行程`);
         itineraries.value.forEach((itin, index) => {
           console.log(`行程${index + 1}:`, {
             id: itin.id,
@@ -545,10 +546,26 @@ export default {
                   location = `${poi.location[0]},${poi.location[1]}`;
                 }
                 
+                // 确保transport.budget与transport_budget同步
+                const transportBudget = poi.transport_budget || 0;
+
+                // 如果poi.transport存在，更新其budget字段
+                if (poi.transport) {
+                  poi.transport.budget = transportBudget;
+                }
+
                 const processedPoi = {
                   ...poi,
                   location,
-                  transport: poi.transport || { type: '', duration: 0 }
+                  // 保留交通预算字段
+                  transport_budget: transportBudget,
+                  // 确保transport对象存在且包含所有必要字段
+                  transport: poi.transport || {
+                    type: poi.transport_type || '',
+                    description: poi.transport_description || '',
+                    duration: 0,
+                    budget: transportBudget
+                  }
                 };
                 
                 console.log('处理后的POI用于保存:', processedPoi);

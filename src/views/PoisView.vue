@@ -312,6 +312,7 @@ export default {
       try {
         pois.value = await poiService.getAll();
         console.log('加载兴趣点数量:', pois.value.length);
+        window.notificationService?.showSuccess(`成功加载${pois.value.length}条兴趣点`);
         
         // 标记兴趣点
         await nextTick();

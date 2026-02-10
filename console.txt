@@ -1,0 +1,133 @@
+发送到后端的数据：
+{
+    "id": "aaron_itin_1770477811056",
+    "name": "Day9：从丽江返程",
+    "date": null,
+    "description": "",
+    "user_id": 3,
+    "created_at": "2026-02-07T15:23:31.084Z",
+    "updated_at": "2026-02-10T15:05:41.780Z",
+    "pois": [
+        {
+            "id": "aaron_B0JKJZHOCS",
+            "poi_id": "aaron_B0JKJZHOCS",
+            "description": "早午饭，丽江古城附近觅食",
+            "budget": 0,
+            "transport_type": "driving",
+            "transport_description": "打车28km，40分钟",
+            "transport_budget": 50,
+            "sort_order": 0,
+            "poi": {
+                "id": "aaron_B0JKJZHOCS",
+                "name": "汉庭酒店(丽江古城南门店)",
+                "address": "长水路99号",
+                "location": "100.233761,26.866165",
+                "tel": "0888-8886799;0888-8886899",
+                "type": "住宿服务;住宿服务相关;住宿服务相关",
+                "typecode": "100000"
+            },
+            "name": "汉庭酒店(丽江古城南门店)",
+            "location": "100.233761,26.866165",
+            "address": "长水路99号",
+            "tel": "0888-8886799;0888-8886899",
+            "type": "住宿服务;住宿服务相关;住宿服务相关",
+            "typecode": "100000",
+            "transport": {
+                "type": "driving",
+                "description": "打车28km，40分钟",
+                "budget": 0
+            }
+        },
+        {
+            "id": "aaron_B037800926",
+            "poi_id": "aaron_B037800926",
+            "description": null,
+            "budget": 0,
+            "transport_type": null,
+            "transport_description": null,
+            "transport_budget": 0,
+            "sort_order": 1,
+            "poi": {
+                "id": "aaron_B037800926",
+                "name": "丽江三义国际机场",
+                "address": "七河镇丽大公路旁",
+                "location": "100.246460,26.671508",
+                "tel": "0888-5173081;0888-5173088",
+                "type": "交通设施服务;机场相关;飞机场",
+                "typecode": "150104"
+            },
+            "name": "丽江三义国际机场",
+            "location": "100.246460,26.671508",
+            "address": "七河镇丽大公路旁",
+            "tel": "0888-5173081;0888-5173088",
+            "type": "交通设施服务;机场相关;飞机场",
+            "typecode": "150104",
+            "transport": {
+                "type": "",
+                "description": "",
+                "budget": 0
+            }
+        }
+    ]
+}
+
+API请求：
+{
+    "method": "PUT",
+    "body": "{\"id\":\"aaron_itin_1770477811056\",\"name\":\"Day9：从丽江返程\",\"date\":null,\"description\":\"\",\"user_id\":3,\"created_at\":\"2026-02-07T15:23:31.084Z\",\"updated_at\":\"2026-02-10T15:05:41.780Z\",\"pois\":[{\"id\":\"aaron_B0JKJZHOCS\",\"name\":\"汉庭酒店(丽江古城南门店)\",\"address\":\"长水路99号\",\"location\":\"100.233761,26.866165\",\"tel\":\"0888-8886799;0888-8886899\",\"type\":\"住宿服务;住宿服务相关;住宿服务相关\",\"typecode\":\"100000\",\"description\":\"早午饭，丽江古城附近觅食\",\"budget\":0,\"transport\":{\"type\":\"driving\",\"description\":\"打车28km，40分钟\",\"budget\":0}},{\"id\":\"aaron_B037800926\",\"name\":\"丽江三义国际机场\",\"address\":\"七河镇丽大公路旁\",\"location\":\"100.246460,26.671508\",\"tel\":\"0888-5173081;0888-5173088\",\"type\":\"交通设施服务;机场相关;飞机场\",\"typecode\":\"150104\",\"description\":\"\",\"budget\":0,\"transport\":{\"type\":\"\",\"description\":\"\",\"budget\":0}}]}",
+    "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInVzZXJuYW1lIjoiYWFyb24iLCJpYXQiOjE3NzA3MzI5ODAsImV4cCI6MTc3MTMzNzc4MH0.KJxenHF9CbxgKMiPUEamMoEa9FGVjHqlrHZ8FZwFo14"
+    }
+}
+
+再次从后端查询得到的数据：
+{
+    "id": "aaron_itin_1770477811056",
+    "name": "Day9：从丽江返程",
+    "date": null,
+    "description": "",
+    "user_id": 3,
+    "created_at": "2026-02-07T15:23:31.084Z",
+    "updated_at": "2026-02-10T15:06:50.425Z",
+    "pois": [
+      {
+        "id": 123,
+        "poi_id": "aaron_B0JKJZHOCS",
+        "description": "早午饭，丽江古城附近觅食",
+        "budget": 0,
+        "transport_type": "driving",
+        "transport_description": "打车28km，40分钟",
+        "transport_budget": 0,
+        "sort_order": 0,
+        "poi": {
+          "id": "aaron_B0JKJZHOCS",
+          "name": "汉庭酒店(丽江古城南门店)",
+          "address": "长水路99号",
+          "location": "100.233761,26.866165",
+          "tel": "0888-8886799;0888-8886899",
+          "type": "住宿服务;住宿服务相关;住宿服务相关",
+          "typecode": "100000"
+        }
+      },
+      {
+        "id": 124,
+        "poi_id": "aaron_B037800926",
+        "description": null,
+        "budget": 0,
+        "transport_type": null,
+        "transport_description": null,
+        "transport_budget": 0,
+        "sort_order": 1,
+        "poi": {
+          "id": "aaron_B037800926",
+          "name": "丽江三义国际机场",
+          "address": "七河镇丽大公路旁",
+          "location": "100.246460,26.671508",
+          "tel": "0888-5173081;0888-5173088",
+          "type": "交通设施服务;机场相关;飞机场",
+          "typecode": "150104"
+        }
+      }
+    ]
+  },
