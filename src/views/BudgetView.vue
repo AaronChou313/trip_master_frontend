@@ -693,24 +693,10 @@ export default {
       initCharts();
     });
 
-    // 监听路由变化，当切换到预算页面时自动同步
-    watch(() => route.name, async (newRouteName) => {
-      if (newRouteName === 'Budget') {
-        console.log('切换到预算页面，自动同步行程预算...');
-        await loadBudgets();
-        await syncFromItineraries();
-        initCharts();
-      }
-    });
-
     // 组件挂载时加载数据
     onMounted(async () => {
       console.log('预算页面挂载，开始加载数据...');
       await loadBudgets();
-      // 如果当前就在预算页面，执行同步
-      if (route.name === 'Budget') {
-        await syncFromItineraries();
-      }
       initCharts();
       console.log('预算数据加载完成');
     });
