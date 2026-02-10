@@ -6,6 +6,7 @@ import ItineraryView from './views/ItineraryView.vue';
 import BudgetView from './views/BudgetView.vue';
 import MemosView from './views/MemosView.vue';
 import GuideView from './views/GuideView.vue';
+import ProfileView from './views/ProfileView.vue';
 
 // 环境变量处理和默认值设置
 const getEnvVar = (key, defaultValue = '') => {
@@ -53,7 +54,8 @@ const routes = [
   { path: '/itinerary', component: ItineraryView, name: 'Itinerary' },
   { path: '/budget', component: BudgetView, name: 'Budget' },
   { path: '/memos', component: MemosView, name: 'Memos' },
-  { path: '/guide', component: GuideView, name: 'Guide' }
+  { path: '/guide', component: GuideView, name: 'Guide' },
+  { path: '/profile', component: ProfileView, name: 'Profile' }
 ];
 
 const router = createRouter({
