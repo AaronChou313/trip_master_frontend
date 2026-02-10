@@ -3,12 +3,13 @@ import PoisView from '../views/PoisView.vue';
 import ItineraryView from '../views/ItineraryView.vue';
 import BudgetView from '../views/BudgetView.vue';
 import MemosView from '../views/MemosView.vue';
+import GuideView from '../views/GuideView.vue';
 import DeployCheck from '../views/DeployCheck.vue';
 
 const routes = [
   {
     path: '/',
-    redirect: '/pois'
+    redirect: '/guide'
   },
   {
     path: '/pois',
@@ -29,6 +30,11 @@ const routes = [
     path: '/memos',
     name: 'Memos',
     component: MemosView
+  },
+  {
+    path: '/guide',
+    name: 'Guide',
+    component: GuideView
   },
   {
     path: '/deploy-check',

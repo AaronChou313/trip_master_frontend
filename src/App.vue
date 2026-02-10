@@ -32,6 +32,7 @@
           </div>
         </div>
         <nav class="nav-menu">
+          <router-link to="/guide" class="nav-link">使用指南</router-link>
           <router-link to="/pois" class="nav-link">地点管理</router-link>
           <router-link to="/itinerary" class="nav-link">行程规划</router-link>
           <router-link to="/budget" class="nav-link">预算管理</router-link>
