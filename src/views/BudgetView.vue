@@ -11,8 +11,8 @@
             <button @click="syncFromItineraries" class="btn btn-secondary">从行程同步</button>
           </div>
           <div class="budget-items">
-            <div 
-              v-for="item in itineraryBudgets" 
+            <div
+              v-for="item in itineraryBudgets"
               :key="item.id"
               class="budget-item"
             >
@@ -20,8 +20,17 @@
                 <h3>{{ item.name }}</h3>
                 <p>{{ item.description || '无描述' }}</p>
               </div>
-              <div class="item-amount">
-                ¥{{ item.amount?.toLocaleString() || 0 }}
+              <div class="item-amounts">
+                <div class="amount-row budget">
+                  <span class="amount-label">预算:</span>
+                  <span class="amount-value">¥{{ item.amount?.toLocaleString() || 0 }}</span>
+                </div>
+                <div class="amount-row actual">
+                  <span class="amount-label">实际:</span>
+                  <span class="amount-value" :class="{ 'over-budget': (item.actualAmount || 0) > (item.amount || 0) }">
+                    ¥{{ (item.actualAmount || 0).toLocaleString() }}
+                  </span>
+                </div>
               </div>
               <div class="item-actions">
                 <button @click="editBudget(item)" class="btn-icon edit">✏️</button>
@@ -29,8 +38,15 @@
               </div>
             </div>
           </div>
-          <div class="category-total">
-            小计: ¥{{ itineraryTotal.toLocaleString() }}
+          <div class="category-totals">
+            <div class="total-row budget">
+              <span>预算小计:</span>
+              <span>¥{{ itineraryTotal.toLocaleString() }}</span>
+            </div>
+            <div class="total-row actual" :class="{ 'over-budget': itineraryActualTotal > itineraryTotal }">
+              <span>实际小计:</span>
+              <span>¥{{ itineraryActualTotal.toLocaleString() }}</span>
+            </div>
           </div>
         </div>
         
@@ -40,8 +56,8 @@
             <button @click="addTransportBudget" class="btn btn-primary">+ 添加</button>
           </div>
           <div class="budget-items">
-            <div 
-              v-for="item in transportBudgets" 
+            <div
+              v-for="item in transportBudgets"
               :key="item.id"
               class="budget-item"
             >
@@ -49,8 +65,17 @@
                 <h3>{{ item.name }}</h3>
                 <p>{{ item.description || '无描述' }}</p>
               </div>
-              <div class="item-amount">
-                ¥{{ item.amount?.toLocaleString() || 0 }}
+              <div class="item-amounts">
+                <div class="amount-row budget">
+                  <span class="amount-label">预算:</span>
+                  <span class="amount-value">¥{{ item.amount?.toLocaleString() || 0 }}</span>
+                </div>
+                <div class="amount-row actual">
+                  <span class="amount-label">实际:</span>
+                  <span class="amount-value" :class="{ 'over-budget': (item.actualAmount || 0) > (item.amount || 0) }">
+                    ¥{{ (item.actualAmount || 0).toLocaleString() }}
+                  </span>
+                </div>
               </div>
               <div class="item-actions">
                 <button @click="editBudget(item)" class="btn-icon edit">✏️</button>
@@ -58,8 +83,15 @@
               </div>
             </div>
           </div>
-          <div class="category-total">
-            小计: ¥{{ transportTotal.toLocaleString() }}
+          <div class="category-totals">
+            <div class="total-row budget">
+              <span>预算小计:</span>
+              <span>¥{{ transportTotal.toLocaleString() }}</span>
+            </div>
+            <div class="total-row actual" :class="{ 'over-budget': transportActualTotal > transportTotal }">
+              <span>实际小计:</span>
+              <span>¥{{ transportActualTotal.toLocaleString() }}</span>
+            </div>
           </div>
         </div>
         
@@ -69,8 +101,8 @@
             <button @click="addAccommodationBudget" class="btn btn-primary">+ 添加</button>
           </div>
           <div class="budget-items">
-            <div 
-              v-for="item in accommodationBudgets" 
+            <div
+              v-for="item in accommodationBudgets"
               :key="item.id"
               class="budget-item"
             >
@@ -78,8 +110,17 @@
                 <h3>{{ item.name }}</h3>
                 <p>{{ item.description || '无描述' }}</p>
               </div>
-              <div class="item-amount">
-                ¥{{ item.amount?.toLocaleString() || 0 }}
+              <div class="item-amounts">
+                <div class="amount-row budget">
+                  <span class="amount-label">预算:</span>
+                  <span class="amount-value">¥{{ item.amount?.toLocaleString() || 0 }}</span>
+                </div>
+                <div class="amount-row actual">
+                  <span class="amount-label">实际:</span>
+                  <span class="amount-value" :class="{ 'over-budget': (item.actualAmount || 0) > (item.amount || 0) }">
+                    ¥{{ (item.actualAmount || 0).toLocaleString() }}
+                  </span>
+                </div>
               </div>
               <div class="item-actions">
                 <button @click="editBudget(item)" class="btn-icon edit">✏️</button>
@@ -87,8 +128,15 @@
               </div>
             </div>
           </div>
-          <div class="category-total">
-            小计: ¥{{ accommodationTotal.toLocaleString() }}
+          <div class="category-totals">
+            <div class="total-row budget">
+              <span>预算小计:</span>
+              <span>¥{{ accommodationTotal.toLocaleString() }}</span>
+            </div>
+            <div class="total-row actual" :class="{ 'over-budget': accommodationActualTotal > accommodationTotal }">
+              <span>实际小计:</span>
+              <span>¥{{ accommodationActualTotal.toLocaleString() }}</span>
+            </div>
           </div>
         </div>
         
@@ -98,8 +146,8 @@
             <button @click="addCustomBudget" class="btn btn-primary">+ 添加</button>
           </div>
           <div class="budget-items">
-            <div 
-              v-for="item in customBudgets" 
+            <div
+              v-for="item in customBudgets"
               :key="item.id"
               class="budget-item"
             >
@@ -107,8 +155,17 @@
                 <h3>{{ item.name }}</h3>
                 <p>{{ item.description || '无描述' }}</p>
               </div>
-              <div class="item-amount">
-                ¥{{ item.amount?.toLocaleString() || 0 }}
+              <div class="item-amounts">
+                <div class="amount-row budget">
+                  <span class="amount-label">预算:</span>
+                  <span class="amount-value">¥{{ item.amount?.toLocaleString() || 0 }}</span>
+                </div>
+                <div class="amount-row actual">
+                  <span class="amount-label">实际:</span>
+                  <span class="amount-value" :class="{ 'over-budget': (item.actualAmount || 0) > (item.amount || 0) }">
+                    ¥{{ (item.actualAmount || 0).toLocaleString() }}
+                  </span>
+                </div>
               </div>
               <div class="item-actions">
                 <button @click="editBudget(item)" class="btn-icon edit">✏️</button>
@@ -116,8 +173,15 @@
               </div>
             </div>
           </div>
-          <div class="category-total">
-            小计: ¥{{ customTotal.toLocaleString() }}
+          <div class="category-totals">
+            <div class="total-row budget">
+              <span>预算小计:</span>
+              <span>¥{{ customTotal.toLocaleString() }}</span>
+            </div>
+            <div class="total-row actual" :class="{ 'over-budget': customActualTotal > customTotal }">
+              <span>实际小计:</span>
+              <span>¥{{ customActualTotal.toLocaleString() }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -130,6 +194,20 @@
             <h2>总预算</h2>
             <div class="amount">¥{{ totalBudget.toLocaleString() }}</div>
           </div>
+          <div class="actual-budget-card">
+            <h2>实际消费</h2>
+            <div class="amount" :class="{ 'over-budget': totalActualBudget > totalBudget }">
+              ¥{{ totalActualBudget.toLocaleString() }}
+            </div>
+            <div class="budget-diff">
+              <span v-if="totalBudget >= totalActualBudget" class="saved">
+                节省: ¥{{ (totalBudget - totalActualBudget).toLocaleString() }}
+              </span>
+              <span v-else class="over">
+                超支: ¥{{ (totalActualBudget - totalBudget).toLocaleString() }}
+              </span>
+            </div>
+          </div>
         </div>
         
         <!-- 图表区域 -->
@@ -138,9 +216,9 @@
             <h2>预算分布</h2>
             <canvas ref="pieChartRef" class="chart-canvas"></canvas>
           </div>
-          
+
           <div class="chart-section">
-            <h2>预算趋势</h2>
+            <h2>预算 vs 实际</h2>
             <canvas ref="barChartRef" class="chart-canvas"></canvas>
           </div>
         </div>
@@ -161,8 +239,12 @@
             <textarea v-model="editingBudget.description" class="form-textarea"></textarea>
           </div>
           <div class="form-group">
-            <label>金额</label>
+            <label>预算金额</label>
             <input v-model.number="editingBudget.amount" type="number" required class="form-input">
+          </div>
+          <div class="form-group">
+            <label>实际消费</label>
+            <input v-model.number="editingBudget.actualAmount" type="number" class="form-input" placeholder="0">
           </div>
           <div class="form-group">
             <label>类别</label>
@@ -256,6 +338,45 @@ export default {
     // 计算总预算
     const totalBudget = computed(() => {
       const total = itineraryTotal.value + transportTotal.value + accommodationTotal.value + customTotal.value;
+      return Math.round(total * 100) / 100;
+    });
+
+    // 计算各类别的实际消费小计
+    const itineraryActualTotal = computed(() => {
+      const total = itineraryBudgets.value.reduce((sum, budget) => {
+        const amount = parseFloat(budget.actualAmount) || 0;
+        return sum + amount;
+      }, 0);
+      return Math.round(total * 100) / 100;
+    });
+
+    const transportActualTotal = computed(() => {
+      const total = transportBudgets.value.reduce((sum, budget) => {
+        const amount = parseFloat(budget.actualAmount) || 0;
+        return sum + amount;
+      }, 0);
+      return Math.round(total * 100) / 100;
+    });
+
+    const accommodationActualTotal = computed(() => {
+      const total = accommodationBudgets.value.reduce((sum, budget) => {
+        const amount = parseFloat(budget.actualAmount) || 0;
+        return sum + amount;
+      }, 0);
+      return Math.round(total * 100) / 100;
+    });
+
+    const customActualTotal = computed(() => {
+      const total = customBudgets.value.reduce((sum, budget) => {
+        const amount = parseFloat(budget.actualAmount) || 0;
+        return sum + amount;
+      }, 0);
+      return Math.round(total * 100) / 100;
+    });
+
+    // 计算总实际消费
+    const totalActualBudget = computed(() => {
+      const total = itineraryActualTotal.value + transportActualTotal.value + accommodationActualTotal.value + customActualTotal.value;
       return Math.round(total * 100) / 100;
     });
 
@@ -496,32 +617,68 @@ export default {
           if (barChart) {
             barChart.destroy();
           }
-          
+
           barChart = new Chart(ctx, {
             type: 'bar',
             data: {
               labels: ['行程', '交通', '住宿', '其他'],
-              datasets: [{
-                label: '预算金额',
-                data: [
-                  itineraryTotal.value,
-                  transportTotal.value,
-                  accommodationTotal.value,
-                  customTotal.value
-                ],
-                backgroundColor: [
-                  '#FF6384',
-                  '#36A2EB',
-                  '#FFCE56',
-                  '#4BC0C0'
-                ]
-              }]
+              datasets: [
+                {
+                  label: '预算',
+                  data: [
+                    itineraryTotal.value,
+                    transportTotal.value,
+                    accommodationTotal.value,
+                    customTotal.value
+                  ],
+                  backgroundColor: [
+                    'rgba(102, 126, 234, 0.8)',
+                    'rgba(118, 75, 162, 0.8)',
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(75, 192, 192, 0.8)'
+                  ],
+                  borderColor: [
+                    'rgba(102, 126, 234, 1)',
+                    'rgba(118, 75, 162, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(75, 192, 192, 1)'
+                  ],
+                  borderWidth: 1
+                },
+                {
+                  label: '实际',
+                  data: [
+                    itineraryActualTotal.value,
+                    transportActualTotal.value,
+                    accommodationActualTotal.value,
+                    customActualTotal.value
+                  ],
+                  backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 159, 64, 0.8)',
+                    'rgba(153, 102, 255, 0.8)'
+                  ],
+                  borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(153, 102, 255, 1)'
+                  ],
+                  borderWidth: 1
+                }
+              ]
             },
             options: {
               responsive: true,
               scales: {
                 y: {
                   beginAtZero: true
+                }
+              },
+              plugins: {
+                legend: {
+                  position: 'bottom'
                 }
               }
             }
@@ -531,7 +688,8 @@ export default {
     };
 
     // 监听预算数据变化，重新绘制图表
-    watch([itineraryTotal, transportTotal, accommodationTotal, customTotal], () => {
+    watch([itineraryTotal, transportTotal, accommodationTotal, customTotal,
+           itineraryActualTotal, transportActualTotal, accommodationActualTotal, customActualTotal], () => {
       initCharts();
     });
 
@@ -572,6 +730,11 @@ export default {
       accommodationTotal,
       customTotal,
       totalBudget,
+      itineraryActualTotal,
+      transportActualTotal,
+      accommodationActualTotal,
+      customActualTotal,
+      totalActualBudget,
       syncFromItineraries,
       addTransportBudget,
       addAccommodationBudget,
@@ -645,6 +808,9 @@ export default {
 /* 总预算卡片样式 */
 .total-budget-card {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .budget-card {
@@ -664,6 +830,44 @@ export default {
 .amount {
   font-size: 2rem;
   font-weight: 700;
+}
+
+.amount.over-budget {
+  color: #dc3545;
+}
+
+/* 实际消费卡片样式 */
+.actual-budget-card {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  transition: background 0.3s;
+}
+
+.actual-budget-card.over-budget {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+.actual-budget-card h2 {
+  font-size: 1.3rem;
+  margin-bottom: 0.75rem;
+}
+
+.budget-diff {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.budget-diff .saved {
+  color: #e8f5e8;
+}
+
+.budget-diff .over {
+  color: #ffe0e0;
 }
 
 .budget-charts {
@@ -777,12 +981,71 @@ export default {
   font-size: 0.9rem;
 }
 
-.item-amount {
-  font-size: 1.25rem;
-  font-weight: 700;
+/* 预算项金额显示 */
+.item-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 150px;
+}
+
+.amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.amount-row.budget {
   color: #4CAF50;
-  min-width: 120px;
-  text-align: right;
+}
+
+.amount-row.actual {
+  color: #2196f3;
+}
+
+.amount-row.actual .amount-value.over-budget {
+  color: #dc3545;
+  font-weight: 700;
+}
+
+.amount-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-right: 0.5rem;
+}
+
+.amount-value {
+  font-weight: 600;
+}
+
+/* 类别总计显示 */
+.category-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 2px solid #f0f0f0;
+  font-size: 1.1rem;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-row.budget {
+  color: #4CAF50;
+}
+
+.total-row.actual {
+  color: #2196f3;
+}
+
+.total-row.actual.over-budget {
+  color: #dc3545;
+  font-weight: 700;
 }
 
 .item-actions {
